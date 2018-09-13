@@ -2,9 +2,10 @@ package g
 
 import (
 	"container/list"
-	"github.com/name5566/leaf/conf"
-	"github.com/name5566/leaf/log"
 	"runtime"
+	"server/erroring"
+	"server/leaf/conf"
+	"server/leaf/log"
 	"sync"
 )
 
@@ -30,6 +31,25 @@ func New(l int) *Go {
 	g := new(Go)
 	g.ChanCb = make(chan func(), l)
 	return g
+}
+
+func GoFunc(f func()) {
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				if conf.LenStackBuf > 0 {
+					buf := make([]byte, conf.LenStackBuf)
+					l := runtime.Stack(buf, false)
+					log.Error("%v: %s", r, buf[:l])
+					erroring.SendErrorResponse()
+				} else {
+					log.Error("%v", r)
+				}
+			}
+		}()
+
+		f()
+	}()
 }
 
 func (g *Go) Go(f func(), cb func()) {

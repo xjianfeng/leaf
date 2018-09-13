@@ -2,15 +2,15 @@ package timer_test
 
 import (
 	"fmt"
-	"github.com/name5566/leaf/timer"
+	"server/leaf/timer"
+	"testing"
 	"time"
 )
 
-func ExampleTimer() {
+func GoTime() {
 	d := timer.NewDispatcher(10)
-
 	// timer 1
-	d.AfterFunc(1, func() {
+	d.AfterFunc(5, func() {
 		fmt.Println("My name is Leaf")
 	})
 
@@ -23,8 +23,6 @@ func ExampleTimer() {
 	// dispatch
 	(<-d.ChanTimer).Cb()
 
-	// Output:
-	// My name is Leaf
 }
 
 func ExampleCronExpr() {
@@ -47,16 +45,19 @@ func ExampleCron() {
 	d := timer.NewDispatcher(10)
 
 	// cron expr
+	println(time.Now().Unix())
 	cronExpr, err := timer.NewCronExpr("* * * * * *")
 	if err != nil {
 		return
 	}
 
+	println(time.Now().Unix())
 	// cron
-	var c *timer.Cron
-	c = d.CronFunc(cronExpr, func() {
+	//var c *timer.Cron
+	//c = d.CronFunc(cronExpr, func() {
+	d.CronFunc(cronExpr, func() {
 		fmt.Println("My name is Leaf")
-		c.Stop()
+		//c.Stop()
 	})
 
 	// dispatch
@@ -64,4 +65,9 @@ func ExampleCron() {
 
 	// Output:
 	// My name is Leaf
+}
+
+func TestGoTime(t *testing.T) {
+	fmt.Println("................................")
+	ExampleCron()
 }

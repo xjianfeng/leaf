@@ -3,9 +3,10 @@ package network
 import (
 	"errors"
 	"github.com/gorilla/websocket"
-	"github.com/name5566/leaf/log"
+	"server/leaf/log"
 	"net"
 	"sync"
+	"time"
 )
 
 type WebsocketConnSet map[*websocket.Conn]struct{}
@@ -30,7 +31,8 @@ func newWSConn(conn *websocket.Conn, pendingWriteNum int, maxMsgLen uint32) *WSC
 				break
 			}
 
-			err := conn.WriteMessage(websocket.BinaryMessage, b)
+			//err := conn.WriteMessage(websocket.BinaryMessage, b)
+			err := conn.WriteMessage(websocket.TextMessage, b)
 			if err != nil {
 				break
 			}
@@ -89,6 +91,10 @@ func (wsConn *WSConn) LocalAddr() net.Addr {
 
 func (wsConn *WSConn) RemoteAddr() net.Addr {
 	return wsConn.conn.RemoteAddr()
+}
+
+func (wsConn *WSConn) SetReadDeadline(t time.Time) error {
+	return wsConn.conn.SetReadDeadline(t)
 }
 
 // goroutine not safe

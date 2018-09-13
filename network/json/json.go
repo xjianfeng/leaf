@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/name5566/leaf/chanrpc"
-	"github.com/name5566/leaf/log"
+	"server/leaf/chanrpc"
+	"server/leaf/log"
 	"reflect"
 )
 
@@ -114,6 +114,8 @@ func (p *Processor) Route(msg interface{}, userData interface{}) error {
 	}
 	msgID := msgType.Elem().Name()
 	i, ok := p.msgInfo[msgID]
+	if msgID != "HearBeatPing" {
+	}
 	if !ok {
 		return fmt.Errorf("message %v not registered", msgID)
 	}
@@ -127,12 +129,13 @@ func (p *Processor) Route(msg interface{}, userData interface{}) error {
 }
 
 // goroutine safe
-func (p *Processor) Unmarshal(data []byte) (interface{}, error) {
+func (p *Processor) UnmarshalBak(data []byte) (interface{}, error) {
 	var m map[string]json.RawMessage
 	err := json.Unmarshal(data, &m)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("json Unmarshal %v", m)
 	if len(m) != 1 {
 		return nil, errors.New("invalid json data")
 	}
@@ -156,6 +159,41 @@ func (p *Processor) Unmarshal(data []byte) (interface{}, error) {
 }
 
 // goroutine safe
+func (p *Processor) Unmarshal(data []byte) (interface{}, error) {
+	var m map[string]json.RawMessage
+	err := json.Unmarshal(data, &m)
+	if err != nil {
+		return nil, err
+	}
+	if len(m) != 2 {
+		return nil, errors.New("invalid json data")
+	}
+	//协议ID
+	msgID, ok := m["id"]
+	if !ok {
+		return nil, fmt.Errorf("erro id message id %v", msgID)
+	}
+	end := len(msgID) - 1
+	msgId := string(msgID[1:end])
+	i, ok := p.msgInfo[msgId]
+	if !ok {
+		return nil, fmt.Errorf("message %v not registered", msgId)
+	}
+	//发送的数据
+	tmpData, ok := m["msg"]
+
+	if msgId != "HearBeatPing" && msgId != "C2sFightMsg" && msgId != "S2cFightMsg" {
+		log.Debug("read msgId %s, msgInfo %v", msgId, string(tmpData))
+	}
+	if ok {
+		msg := reflect.New(i.msgType.Elem()).Interface()
+		return msg, json.Unmarshal(tmpData, msg)
+	}
+
+	panic("bug")
+}
+
+// goroutine safe
 func (p *Processor) Marshal(msg interface{}) ([][]byte, error) {
 	msgType := reflect.TypeOf(msg)
 	if msgType == nil || msgType.Kind() != reflect.Ptr {
@@ -167,7 +205,10 @@ func (p *Processor) Marshal(msg interface{}) ([][]byte, error) {
 	}
 
 	// data
-	m := map[string]interface{}{msgID: msg}
+	m := map[string]interface{}{"id": msgID, "msg": msg}
 	data, err := json.Marshal(m)
+	if msgID != "HearBeatPing" && msgID != "C2sFightMsg" && msgID != "S2cFightMsg" && msgID != "S2cNotify" {
+		log.Debug("write msg %s", string(data))
+	}
 	return [][]byte{data}, err
 }

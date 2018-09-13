@@ -3,9 +3,10 @@ package chanrpc
 import (
 	"errors"
 	"fmt"
-	"github.com/name5566/leaf/conf"
-	"github.com/name5566/leaf/log"
+	"server/leaf/conf"
+	"server/leaf/log"
 	"runtime"
+	"server/erroring"
 )
 
 // one server per goroutine (goroutine not safe)
@@ -103,6 +104,7 @@ func (s *Server) exec(ci *CallInfo) (err error) {
 				buf := make([]byte, conf.LenStackBuf)
 				l := runtime.Stack(buf, false)
 				err = fmt.Errorf("%v: %s", r, buf[:l])
+				erroring.SendErrorResponse()
 			} else {
 				err = fmt.Errorf("%v", r)
 			}
@@ -198,6 +200,7 @@ func (c *Client) call(ci *CallInfo, block bool) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = r.(error)
+			erroring.SendErrorResponse()
 		}
 	}()
 

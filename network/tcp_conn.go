@@ -1,9 +1,10 @@
 package network
 
 import (
-	"github.com/name5566/leaf/log"
+	"server/leaf/log"
 	"net"
 	"sync"
+	"time"
 )
 
 type ConnSet map[net.Conn]struct{}
@@ -102,6 +103,10 @@ func (tcpConn *TCPConn) LocalAddr() net.Addr {
 
 func (tcpConn *TCPConn) RemoteAddr() net.Addr {
 	return tcpConn.conn.RemoteAddr()
+}
+
+func (tcpConn *TCPConn) SetReadDeadline(t time.Time) error {
+	return tcpConn.conn.SetReadDeadline(t)
 }
 
 func (tcpConn *TCPConn) ReadMsg() ([]byte, error) {

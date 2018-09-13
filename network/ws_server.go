@@ -3,9 +3,9 @@ package network
 import (
 	"crypto/tls"
 	"github.com/gorilla/websocket"
-	"github.com/name5566/leaf/log"
 	"net"
 	"net/http"
+	"server/leaf/log"
 	"sync"
 	"time"
 )
@@ -45,6 +45,7 @@ func (handler *WSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	conn.SetReadLimit(int64(handler.maxMsgLen))
+	conn.SetReadDeadline(time.Now().Add(time.Minute))
 
 	handler.wg.Add(1)
 	defer handler.wg.Done()
@@ -65,9 +66,12 @@ func (handler *WSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handler.mutexConns.Unlock()
 
 	wsConn := newWSConn(conn, handler.pendingWriteNum, handler.maxMsgLen)
+	//处理game模块中 RegisterChanRPC 的 NewAgent
 	agent := handler.newAgent(wsConn)
+	//处理msg 注册的消息
 	agent.Run()
 
+	log.Debug("Break Agent Read Error %v", agent)
 	// cleanup
 	wsConn.Close()
 	handler.mutexConns.Lock()

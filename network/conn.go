@@ -2,6 +2,7 @@ package network
 
 import (
 	"net"
+	"time"
 )
 
 type Conn interface {
@@ -11,4 +12,5 @@ type Conn interface {
 	RemoteAddr() net.Addr
 	Close()
 	Destroy()
+	SetReadDeadline(time.Time) error
 }

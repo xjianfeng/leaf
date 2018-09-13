@@ -3,6 +3,7 @@ package network
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 )
@@ -70,7 +71,7 @@ func (p *MsgParser) Read(conn *TCPConn) ([]byte, error) {
 	if _, err := io.ReadFull(conn, bufMsgLen); err != nil {
 		return nil, err
 	}
-
+	fmt.Println("msg data len:", bufMsgLen)
 	// parse len
 	var msgLen uint32
 	switch p.lenMsgLen {
@@ -103,6 +104,7 @@ func (p *MsgParser) Read(conn *TCPConn) ([]byte, error) {
 		return nil, err
 	}
 
+	fmt.Println("read msgData: ", msgData)
 	return msgData, nil
 }
 

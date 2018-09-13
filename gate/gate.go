@@ -1,9 +1,9 @@
 package gate
 
 import (
-	"github.com/name5566/leaf/chanrpc"
-	"github.com/name5566/leaf/log"
-	"github.com/name5566/leaf/network"
+	"server/leaf/chanrpc"
+	"server/leaf/log"
+	"server/leaf/network"
 	"net"
 	"reflect"
 	"time"
@@ -42,6 +42,7 @@ func (gate *Gate) Run(closeSig chan bool) {
 		wsServer.NewAgent = func(conn *network.WSConn) network.Agent {
 			a := &agent{conn: conn, gate: gate}
 			if gate.AgentChanRPC != nil {
+				//leaf/chanrpc/chanrpc.go Go
 				gate.AgentChanRPC.Go("NewAgent", a)
 			}
 			return a
@@ -84,19 +85,24 @@ func (gate *Gate) Run(closeSig chan bool) {
 func (gate *Gate) OnDestroy() {}
 
 type agent struct {
-	conn     network.Conn
-	gate     *Gate
-	userData interface{}
+	conn      network.Conn
+	gate      *Gate
+	userData  interface{}
+	logicConn net.Conn
+}
+
+func HandleConnectTimeOut(a *agent) error {
+	return a.conn.SetReadDeadline(time.Now().Add(time.Minute))
 }
 
 func (a *agent) Run() {
 	for {
 		data, err := a.conn.ReadMsg()
 		if err != nil {
-			log.Debug("read message: %v", err)
+			log.Debug("ReadMsg Error %v", err)
 			break
 		}
-
+		HandleConnectTimeOut(a)
 		if a.gate.Processor != nil {
 			msg, err := a.gate.Processor.Unmarshal(data)
 			if err != nil {
@@ -135,6 +141,16 @@ func (a *agent) WriteMsg(msg interface{}) {
 	}
 }
 
+func (a *agent) WriteRawMsg(msg interface{}) {
+	data, ok := msg.([][]byte)
+	if ok {
+		err := a.conn.WriteMsg(data...)
+		if err != nil {
+			log.Error("write message %v error: %v", reflect.TypeOf(msg), err)
+		}
+	}
+}
+
 func (a *agent) LocalAddr() net.Addr {
 	return a.conn.LocalAddr()
 }
@@ -157,4 +173,8 @@ func (a *agent) UserData() interface{} {
 
 func (a *agent) SetUserData(data interface{}) {
 	a.userData = data
+}
+
+func (a *agent) SetLogicConn(conn net.Conn) {
+	a.logicConn = conn
 }
