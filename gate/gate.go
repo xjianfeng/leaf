@@ -1,13 +1,20 @@
 package gate
 
 import (
+	"net"
+	"reflect"
 	"server/leaf/chanrpc"
 	"server/leaf/log"
 	"server/leaf/network"
-	"net"
-	"reflect"
 	"time"
 )
+
+var ignoreMsg = map[string]bool{
+	"*messages.HearBeatPing": true,
+	"*messages.C2sFightMsg":  true,
+	"*messages.S2cFightMsg":  true,
+	"*messages.S2cNotify":    true,
+}
 
 type Gate struct {
 	MaxConnNum      int
@@ -109,6 +116,10 @@ func (a *agent) Run() {
 				log.Debug("unmarshal message error: %v", err)
 				break
 			}
+			msgType := reflect.TypeOf(msg).String()
+			if _, ok := ignoreMsg[msgType]; !ok && len(msgType) > 10 {
+				log.Debug("[%v] %v", a.UserData(), string(data))
+			}
 			err = a.gate.Processor.Route(msg, a)
 			if err != nil {
 				log.Debug("route message error: %v", err)
@@ -137,6 +148,10 @@ func (a *agent) WriteMsg(msg interface{}) {
 		err = a.conn.WriteMsg(data...)
 		if err != nil {
 			log.Error("write message %v error: %v", reflect.TypeOf(msg), err)
+		}
+		msgType := reflect.TypeOf(msg).String()
+		if _, ok := ignoreMsg[msgType]; !ok && len(msgType) > 10 {
+			log.Debug("[%v] %v", a.UserData(), string(data[0]))
 		}
 	}
 }

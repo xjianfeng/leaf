@@ -109,9 +109,12 @@ func (logger *Logger) doPrintf(level int, printLevel string, format string, a ..
 	}
 
 	fileInfo := ""
-	_, file, line, ok := runtime.Caller(3)
-	if ok && len(file) > PathLen {
-		fileInfo = fmt.Sprintf("%s:%d ", file[PathLen:], line)
+	_, file, line, ok := runtime.Caller(2)
+	if ok {
+		n := strings.LastIndex(file, "/")
+		if len(file) > n+1 {
+			fileInfo = fmt.Sprintf("%s:%d ", file[n+1:], line)
+		}
 	}
 	format = fileInfo + printLevel + format
 	logger.baseLogger.Output(3, fmt.Sprintf(format, a...))

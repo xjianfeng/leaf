@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"server/leaf/chanrpc"
 	"server/leaf/log"
-	"reflect"
 )
 
 type Processor struct {
@@ -181,10 +181,11 @@ func (p *Processor) Unmarshal(data []byte) (interface{}, error) {
 	}
 	//发送的数据
 	tmpData, ok := m["msg"]
-
-	if msgId != "HearBeatPing" && msgId != "C2sFightMsg" && msgId != "S2cFightMsg" {
-		log.Debug("read msgId %s, msgInfo %v", msgId, string(tmpData))
-	}
+	/*
+		if msgId != "HearBeatPing" && msgId != "C2sFightMsg" && msgId != "S2cFightMsg" {
+			log.Debug("read msgId %s, msgInfo %v", msgId, string(tmpData))
+		}
+	*/
 	if ok {
 		msg := reflect.New(i.msgType.Elem()).Interface()
 		return msg, json.Unmarshal(tmpData, msg)
@@ -207,8 +208,10 @@ func (p *Processor) Marshal(msg interface{}) ([][]byte, error) {
 	// data
 	m := map[string]interface{}{"id": msgID, "msg": msg}
 	data, err := json.Marshal(m)
-	if msgID != "HearBeatPing" && msgID != "C2sFightMsg" && msgID != "S2cFightMsg" && msgID != "S2cNotify" {
-		log.Debug("write msg %s", string(data))
-	}
+	/*
+		if msgID != "HearBeatPing" && msgID != "C2sFightMsg" && msgID != "S2cFightMsg" && msgID != "S2cNotify" {
+			log.Debug("write msg %s", string(data))
+		}
+	*/
 	return [][]byte{data}, err
 }
